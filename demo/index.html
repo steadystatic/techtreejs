@@ -1,92 +1,69 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>techtree.js | demo tech tree</title>
-        
-        <link href="/demo/tree_style.css" rel="stylesheet" type="text/css" />
+<head>
+  <meta charset="UTF-8">
+  <title>Hackathon 2014: Learning Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+  <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="/demo/tree_style.css" rel="stylesheet" type= "text/css">
+  <script src= "//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js" type='text/javascript'></script>
+  <script src= "//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js" type='text/javascript'></script>
+  <!-- loads tech tree into "tech-tree" div once ready -->
+</head>
 
-        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js" type='text/javascript'></script>
+<body>
+  <div class='configuration explorer'>
+    <script type="text/javascript">
+      //Call redraw() when there are changes to tree
+      var redraw = function() {d3.select("svg").remove(); techtree.drawTree()};
+    </script>
 
-        <!-- loads tech tree into "tech-tree" div once ready -->
-        <script>
-            $.getScript( "http://d3js.org/d3.v3.min.js", function( data, textStatus, jqxhr ) {
-                $.getScript("/demo/tree_config.js", function(data, textStatus, jqxhr){
-                    $.getScript("/techtree.js", function(data, textStatus, jqxhr){
-                        techtree.drawTree();
-                    });
-                });
+  </div>
+
+  <div id='techTreeDiv' class="container">
+    <h1 class="learning-map-headline">Discovery Tree</h1>
+    <h3><span class="learning-map-concept" data-toggle="tooltip" title="You can do it">Electricity</span></h3>
+
+    <div class="learning-map-overview">
+      <p class="learning-map-instructions">Ready to learn about <span class="learning-map-concept">Electricity</span>? Great! Here's
+        a discovery tree of what we think are related concepts that will help form a fuller understanding of this topic. Feel free to read each
+        topic within the tree at your own pace, then advance to the next subject you're interested in.</p>
+      <div class="learning-map-progress empty-progress">
+        <h4>Your Progress</h4>
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" data-progress="0" style="width: 0%;">
+              <span class="learning-map-progress-complete">0</span>%
+            </div>
+        </div>
+      </div>
+      <div class="clearfix"></div>
+      <div id='tech-tree' class="learning-map-container"></div>
+      <div class="learning-map-controls" style="display:none;">
+        <button class="btn btn-primary pull-right mark-complete">Mark Complete</button>
+        <button class="btn btn-default cancel-reading">Cancel</button>
+      </div>
+      <div class="learning-map-topic-container"></div>
+    </div>
+  </div>
+  <script type="text/javascript">
+    $.getScript("http://d3js.org/d3.v3.min.js", function( data, textStatus, jqxhr ) {
+      $.getScript("/demo/tree_config.js", function(data, textStatus, jqxhr){
+        $.getScript("/techtree.js", function(data, textStatus, jqxhr){
+          techtree.drawTree();
+          window.setTimeout(function() {
+            $('.node').click(function(e){
+              e.preventDefault();
+              e.stopPropagation();
+              var name = $(this).data('title');
+              techtree.learnAbout(name);
             });
-        </script>
- 
-
-    </head>
-    <body>
-        <div id='configuration explorer'>
-        
-            <link href="/demo/radioButtons.css" rel="stylesheet" type="text/css" />
-            
-            <script>
-                var redraw = function() {d3.select("svg").remove(); techtree.drawTree()};
-            </script>
-
-            <h3>treeConfig options: </h3>
-            <!-- TODO: check the appropriate boxes based on default treeConfig options like below: -->
-            <!-- <input type="radio" id="xbutton" name="closeTooltip" value="x-button" checked> -->
-            
-            <table>
-                <tr>
-                    <td>
-                        closeTooltip:
-                        <input type="radio" id="xbutton" name="closeTooltip" value="x-button" onclick='treeConfig.closeTooltip="x-button"; redraw()'>
-                           <label for="xbutton">x-button</label>
-                        <input type="radio" id="onMouseOut" name="closeTooltip"value="onmouseout" onclick='treeConfig.closeTooltip="onmouseout"; redraw()'>
-                           <label for="onMouseOut">onmouseout</label>
-                    </td>
-                    <td>
-                        openTooltip:
-                        <input type="radio" id="onclick" name="openTooltip" value="onclick" onclick='treeConfig.openTooltip="onclick"; redraw()'>
-                           <label for="onclick">onclick</label>
-                        <input type="radio" id='onmouseover' name='openTooltip' value='onmouseover' onclick='treeConfig.openTooltip="onmouseover"; redraw()'>
-                           <label for="onmouseover">onmoouseover</label>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                            showNodeNames:
-                         <input type="radio" id="showNodeNames_true" name="showNodeNames" onclick='treeConfig.showNodeNames=true; redraw()'>
-                           <label for="showNodeNames_true">true</label>
-                         <input type="radio" id="showNodeNames_false" name="showNodeNames" onclick='treeConfig.showNodeNames=false; redraw()'>
-                           <label for="showNodeNames_false">false</label>
-                    </td>
-                    <td>
-                        showImages:
-                     <input type="radio" id="showImages_true" name="showImages" onclick='treeConfig.showImages=true; redraw()'>
-                       <label for="showImages_true">true</label>
-                     <input type="radio" id="showImages_false" name="showImages" onclick='treeConfig.showImages=false; redraw()'>
-                       <label for="showImages_false">false</label>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        futureTechFog:
-                     <input type="radio" id="fog_none" name="fog" onclick='treeConfig.futureTechFog="none"; redraw()'>
-                       <label for="fog_none">none</label>
-                     <input type="radio" id="fog_aesthetic" name="fog" onclick='treeConfig.futureTechFog="aesthetic"; redraw()'>
-                       <label for="fog_aesthetic">aesthetic</label>
-                    <td>
-                </tr>
-            </table>
-        </div>
-        <div id='techTreeDiv'>
-            <h3>resulting tech tree: </h3>
-            <div id='tech-tree'> </div>
-        </div>
-    
-    </body>
-
-
-        
-
-    
+            $('.node').popover({animation:true, html:true, template:'<div class="popover"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div><div class="popover-footer"><button type="button" class="btn btn-small btn-primary pull-right" onclick="techtree.readOn=true; techtree.readTopic(techtree.currentNode); $(&quot;.popover&quot;).popover(&quot;hide&quot;)">Read topic</button></div></div>'});
+          }, 500);
+        });
+    });
+  });
+</script>
+</body>
 </html>
+

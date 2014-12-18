@@ -1,28 +1,65 @@
-
 // the main techtree module
 techtree = {
+    readOn: false,
+    currentNode: '',
     // ABSTRACT METHODS (the ones which should be overloaded in a real game)
-    canAfford: function(nodename){
-        // Returns true if user can afford to research the given node, else returns false
-        if (confirm("Click ok if you can afford "+nodename+", cancel if you cannot.\n\nOverload techtree.canAfford(nodename) to connect this to your game.") == true) {
-            return true;
-        } else {
-            return false;
-        }
-        return false;
-
+    learnAbout: function(nodename){
+      techtree.currentNode = nodename;
     },
 
-    researchNode: function(nodename){
+    readTopic: function(nodename){
         // Performs research action on given node.
-        alert("Now researching "+nodename+"\n\nOverload techtree.researchNode(nodename) to connect this to your game.");
-        
         // TODO: show research in progress animation for a little while before completing.
-        techtree.completeResearch(nodename);
+      var url = "http://dbpedia.org/sparql";
+      var query = "\
+        PREFIX dbpedia2: <http://dbpedia.org/property/>\
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>\
+        SELECT ?o\
+        WHERE {\
+        ?s dbpedia2:genus \"Apis\"@en;\
+        foaf:depiction ?o\
+        }";
+      var queryUrl = encodeURI( url+"?query="+query+"&format=json" );
+      //Hide the tree, show the article
+      $('svg').hide();
+      $('.learning-map-controls').show();
+      $.ajax({
+          dataType: "jsonp",
+          url: queryUrl,
+          success: function( _data ) {
+            var results = _data.results.bindings;
+            $('.learning-map-controls').append($('h4').text(nodename));
+            $( ".mark-complete" ).click(function() {
+              $('svg').show();
+              $('.learning-map-topic-container, .learning-map-controls').hide();
+               techtree.completeResearch(nodename);
+            });
+            $( ".cancel-reading" ).click(function() {
+              $('svg').show();
+              $('.learning-map-topic-container, .learning-map-controls').hide();
+            });
+            for ( var i in results ) {
+              var src = results[i].o.value;
+              $('.learning-map-topic-container').append( '<img src="'+src+'"/>' );
+            }
+          }
+      });
     },
     
     // RECIEVER METHODS (the ones which you should call from your methods to change the tree)
     completeResearch: function(nodename){
+        var progressBar = $('.learning-map-progress');
+        var progressTxt = $('.learning-map-progress-complete');
+        var progressData = $('.progress-bar');
+        var currentProgress = progressData.data('progress');
+        console.log(currentProgress, typeof currentProgress);
+        //TODO: calculate progress based on number of nodes left
+        var progressOffset = 10;
+        var newProgress = (currentProgress < 100) ? (currentProgress + progressOffset) : 100;
+        progressBar.removeClass('empty-progress');
+        progressData.data('progress', newProgress);
+        progressData.attr('style', 'width:'+newProgress+'%');
+        progressTxt.text(newProgress.toString());
         // Signals to the tree that research is complete for given node.
         techtree._completeNode(nodename);
     },
@@ -71,10 +108,15 @@ techtree = {
             .enter().append("g")
               .attr("class", "node")
               .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-              .attr(treeConfig.openTooltip, function(d){ return "techtree._showTooltip('"+d.name+"','"+d.text+"',"+d.x+","+d.y+","+d.depth+")"; });
+              .attr("id", function(d) { return "node_" + d.name + d.x.toString().substr(0,3)})
+              .attr("data-toggle", "popover")
+              .attr("data-title", function(d){return d.name.replace(/_/g, " ")})
+              .attr("data-content", function(d){return d.text})
+              .attr("data-container", "body")
+              .attr("data-placement", "top")
+              .attr(treeConfig.openTooltip, function(d){ return "techtree._showTooltip('"+d.name+"','"+d.text+"',"+d.x+","+d.y+","+d.depth+","+'"'+("node_" + d.name + d.x.toString().substr(0,3))+'"'+")"; });
 
           techtree._drawNodeBoxes(node);
-
 
           node.append("text")
               .attr("dx", 10) // function(d) { return d.children ? -12 : 12; })
@@ -117,12 +159,12 @@ techtree = {
         if (treeConfig.showImages){
           // add the pattern for each node picture
           node.append('svg:pattern')
-          .attr('id', function(d){return d.name+'_img'})  
-          .attr('patternUnits', 'userSpaceOnUse')
-          .attr('width', NODE_SIZE)
-          .attr('height', NODE_SIZE)
-          .attr('x',NODE_SIZE/2)
-          .attr('y',NODE_SIZE/2)
+            .attr('id', function(d){return d.name+'_img'})  
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', NODE_SIZE)
+            .attr('height', NODE_SIZE)
+            .attr('x',NODE_SIZE/2)
+            .attr('y',NODE_SIZE/2)
           .append('svg:image')
             .attr('xlink:href', function(d){return treeConfig.imgDir+d.name+'.png'})
             .attr('x', 0)
@@ -214,178 +256,146 @@ techtree = {
             .delay(3*TIM)
             .style('fill','rgb(150,150,150)')
             .style('opacity',0.8);
-        /* note: could also do like this, but it's too slow:
-        d3.select('#'+nodename+'_tooltip_box').transition(TIM)
-            .style('fill','#DF3A01')
-            .style('opacity',0.8)
-            .each("end",function(){
-                d3.select('#'+nodename+'_tooltip_box').transition(TIM)
-                    .delay(TIM)
-                    .style('fill','rgb(150,150,150)')
-                    .style('opacity',0.8)
-                    .each("end",function(){
-                        d3.select('#'+nodename+'_tooltip_box').transition(TIM)
-                            .delay(2*TIM)
-                            .style('fill','#DF3A01')
-                            .style('opacity',0.8)
-                            .each("end",function(){
-                                d3.select('#'+nodename+'_tooltip_box').transition(TIM)
-                                    .delay(3*TIM)
-                                    .style('fill','rgb(150,150,150)')
-                                    .style('opacity',0.8);
-                            });
-                    });
-            });
-        */
     },
     
-    _selectNode: function(nodename){
-        // this is called when node is selected for research 
-        if (techtree.canAfford(nodename)){
-            techtree.researchNode(nodename);
-            techtree._unshowTooltip(nodename);
-        } else {
-            console.log("user can't afford "+nodename);
-            //"you can't afford this" animation...
-            techtree._NoNoAnimation('#'+nodename+'_tooltip_box');
+    
 
-        }
-    },
-
-    _showTooltip: function(name, desc, x, y, depth){
+    _showTooltip: function(name, desc, x, y, depth, idName){
+        $('.node').not(this).popover('hide');
+        $('.node').on('hidden.bs.popover', function () {
+            techtree.readOn = false;
+        })
         // shows a tooltip for the given node, unless the node has been dismissed
-        if (techtree._dismissedTooltip != name){
-            var W = treeConfig.tooltipW;
-            var H = treeConfig.tooltipH;
-            var X = y-W/2;  // yes, x and y are switched here... don't ask me why, they just are.
-            var Y = x-H/2;
-            var title_H = H/8;
-            var txt_H = H/treeConfig.tooltipTextLineCount;
-            var PAD = 10;  // space between edges and text
-            console.log('drawing tooltip for:', name,' @ (',X,',',Y,')');
+        //if (techtree._dismissedTooltip != name){
+            //var W = treeConfig.tooltipW;
+            //var H = treeConfig.tooltipH;
+            //var X = y-W/2;  // yes, x and y are switched here... don't ask me why, they just are.
+            //var Y = x-H/2;
+            //var title_H = H/8;
+            //var txt_H = H/treeConfig.tooltipTextLineCount;
+            //var PAD = 10;  // space between edges and text
+            //console.log('drawing tooltip for:', name,' @ (',X,',',Y,')');
             
-            // check that tooltip is inside canvas
-            if (X < 0){
-                X = 0;
-            } else if (X+W > treeConfig.treeWidth){
-                X = treeConfig.treeWidth - W;
-            }
-            if (Y < 0){
-                Y = 0
-            } else if (Y+H > treeConfig.treeHeight){
-                Y = treeConfig.treeHeight - H
-            }
+            //// check that tooltip is inside canvas
+            //if (X < 0){
+                //X = 0;
+            //} else if (X+W > treeConfig.treeWidth){
+                //X = treeConfig.treeWidth - W;
+            //}
+            //if (Y < 0){
+                //Y = 0
+            //} else if (Y+H > treeConfig.treeHeight){
+                //Y = treeConfig.treeHeight - H
+            //}
             
-            var enabled = techtree._isEnabled(depth,name);
+            //var enabled = techtree._isEnabled(depth,name);
                 
-            var box = techtree.treeSVG.append('rect')
-                .attr('id',name+'_tooltip_box')
-                .attr('x',X)
-                .attr('y',Y)
-                .attr('width',W)
-                .attr('height',H)
-                .style('fill','rgb(150,150,150)')
-                .style('opacity',0.8);
+            //var box = techtree.treeSVG.append('rect')
+                //.attr('id',name+'_tooltip_box')
+                //.attr('x',X)
+                //.attr('y',Y)
+                //.attr('width',W)
+                //.attr('height',H)
+                //.style('fill','rgb(150,150,150)')
+                //.style('opacity',0.8);
                   
-            var title = techtree.treeSVG.append('text')
-                .attr('id',name+'_tooltip_title')
-                .attr('x',X+PAD)
-                .attr('y',Y+title_H)
-                .attr('font-size',title_H)
-                .attr('fill', 'rgb(80,80,80)')
-                .text(name);
+            //var title = techtree.treeSVG.append('text')
+                //.attr('id',name+'_tooltip_title')
+                //.attr('x',X+PAD)
+                //.attr('y',Y+title_H)
+                //.attr('font-size',title_H)
+                //.attr('fill', 'rgb(80,80,80)')
+                //.text(name);
                 
-            var imgH = 100,
-                imgW = 100;
-            var img = techtree.treeSVG.append('image')
-                .attr('id',name+'_tooltip_img')
-                .attr('xlink:href', treeConfig.imgDir+name+'.png')
-                .attr('x', X+PAD)
-                .attr('y', Y+title_H+PAD)
-                .attr('width', imgW)
-                .attr('height', imgH);
+            //var imgH = 100,
+                //imgW = 100;
+            //var img = techtree.treeSVG.append('image')
+                //.attr('id',name+'_tooltip_img')
+                //.attr('xlink:href', treeConfig.imgDir+name+'.png')
+                //.attr('x', X+PAD)
+                //.attr('y', Y+title_H+PAD)
+                //.attr('width', imgW)
+                //.attr('height', imgH);
                 
-            var txtID = name+'_tooltip_txt';
-            var txtX = X+PAD+imgW+PAD;
-            var txtW = W-(txtX-X)-PAD;
-            var text = techtree.treeSVG.append('text')
-                .attr('id',txtID)
-                .attr('x',txtX)
-                .attr('y',Y+title_H)
-                .attr('font-size',txt_H)
-                .attr('fill', 'rgb(40,40,40)');
+            //var txtID = name+'_tooltip_txt';
+            //var txtX = X+PAD+imgW+PAD;
+            //var txtW = W-(txtX-X)-PAD;
+            //var text = techtree.treeSVG.append('text')
+                //.attr('id',txtID)
+                //.attr('x',txtX)
+                //.attr('y',Y+title_H)
+                //.attr('font-size',txt_H)
+                //.attr('fill', 'rgb(40,40,40)');
 
-            addTextLines = function(element, txt, width, txt_x){
-                // adds lines of given "width" with text from "txt" to "element"
-                // TODO: fix the "global" vars used in here
-                var words = txt.split(' ');
-                var lstr = words[0];  // line string
+            //addTextLines = function(element, txt, width, txt_x){
+                //// adds lines of given "width" with text from "txt" to "element"
+                //// TODO: fix the "global" vars used in here
+                //var words = txt.split(' ');
+                //var lstr = words[0];  // line string
 
-                // add the first line with the 1st word
-                line = text.append('tspan')
-                    .attr('dx', 0)
-                    .attr('dy', txt_H)
-                    .text(lstr);
+                //// add the first line with the 1st word
+                //line = text.append('tspan')
+                    //.attr('dx', 0)
+                    //.attr('dy', txt_H)
+                    //.text(lstr);
 
-                for (var i = 1; i < words.length; i++) {  // for the rest of the words
-                    lstr+=' '+words[i];
-                    line.text(lstr);
-                    if (line.node().getComputedTextLength() < txtW){ 
-                        continue;
-                    } else { // over line size limit
-                        // remove offending word from last line
-                        var lstr = lstr.substring(0, lstr.lastIndexOf(" "));
-                        line.text(lstr);
-                        // start new line with word
-                        lstr = words[i];
-                        line = text.append('tspan')
-                            .attr('x', txt_x)
-                            .attr('dy', txt_H)
-                            .text(lstr);
-                    }
-                }
-            };
+                //for (var i = 1; i < words.length; i++) {  // for the rest of the words
+                    //lstr+=' '+words[i];
+                    //line.text(lstr);
+                    //if (line.node().getComputedTextLength() < txtW){ 
+                        //continue;
+                    //} else { // over line size limit
+                        //// remove offending word from last line
+                        //var lstr = lstr.substring(0, lstr.lastIndexOf(" "));
+                        //line.text(lstr);
+                        //// start new line with word
+                        //lstr = words[i];
+                        //line = text.append('tspan')
+                            //.attr('x', txt_x)
+                            //.attr('dy', txt_H)
+                            //.text(lstr);
+                    //}
+                //}
+            //};
 
-            addTextLines(text, desc, txtW, txtX);
-                                        
-            var footTxt = techtree.treeSVG.append('text')
-                .attr('id',name+'_tooltip_footTxt')
-                .attr('x', X+PAD)
-                .attr('y', Y+H-txt_H/2)
-                .attr('font-size', txt_H/2)
-                .attr('fill', 'rgb(0,50,200)')
-                .text(enabled ? 'click to research' : 'not yet available');
-                
+            //addTextLines(text, desc, txtW, txtX);
 
-            
-            // draw UI "button" on top of everything in the tooltip (this should be after all text, but before buttons)
-            var UI_rect = techtree.treeSVG.append('rect')
-                .attr('id',name+'_tooltip_UI')
-                .attr('x',X)
-                .attr('y',Y)
-                .attr('width',W)
-                .attr('height',H)
-                .attr('fill','rgba(0,0,0,0)')
-                .attr("onmouseout" ,(treeConfig.closeTooltip == 'onmouseout') 
-                                     ? function(d){ return "techtree._unshowTooltip('"+name+"')" }
-                                     : undefined)
-                .attr("onclick"    ,function(d){ return "(techtree._isEnabled("+depth+",'"+name+"') == true) ? techtree._selectNode('"+name+"') : techtree._NoNoAnimation('#"+name+"_tooltip_box') "; });
-                
-            // BUTTONS (these should be last):
-            if (treeConfig.closeTooltip == 'x-button'){ 
-                var closeButSize = title_H/2;
-                var closeBut = techtree.treeSVG.append('text')
-                    .attr('id',name+'_tooltip_closeBut')
-                    .attr('x', X+W-PAD-closeButSize)
-                    .attr('y', Y+PAD+closeButSize)
-                    .attr('font-size', closeButSize)
-                    .attr('fill', 'rgb(100,10,10)')
-                    .attr('onclick', function(d){ return "techtree._unshowTooltip('"+name+"'); techtree._dismissedTooltip='"+name+"'; return false;"; })
-                    .text('X');
-            }
-        }
+            //var footTxt = techtree.treeSVG.append('text')
+                //.attr('id',name+'_tooltip_footTxt')
+                //.attr('x', X+PAD)
+                //.attr('y', Y+H-txt_H/2)
+                //.attr('font-size', txt_H/2)
+                //.attr('fill', 'rgb(0,50,200)')
+                //.text(enabled ? 'click to research' : 'not yet available');
+
+            //// draw UI "button" on top of everything in the tooltip (this should be after all text, but before buttons)
+            //var UI_rect = techtree.treeSVG.append('rect')
+                //.attr('id',name+'_tooltip_UI')
+                //.attr('x',X)
+                //.attr('y',Y)
+                //.attr('width',W)
+                //.attr('height',H)
+                //.attr('fill','rgba(0,0,0,0)')
+                //.attr("onmouseout" ,(treeConfig.closeTooltip == 'onmouseout') 
+                                     //? function(d){ return "techtree._unshowTooltip('"+name+"')" }
+                                     //: undefined)
+                //.attr("onclick"    ,function(d){ return "(techtree._isEnabled("+depth+",'"+name+"') == true) ? techtree._selectNode('"+name+"') : techtree._NoNoAnimation('#"+name+"_tooltip_box') "; });
+
+            //// BUTTONS (these should be last):
+            //if (treeConfig.closeTooltip == 'x-button'){ 
+                //var closeButSize = title_H/2;
+                //var closeBut = techtree.treeSVG.append('text')
+                    //.attr('id',name+'_tooltip_closeBut')
+                    //.attr('x', X+W-PAD-closeButSize)
+                    //.attr('y', Y+PAD+closeButSize)
+                    //.attr('font-size', closeButSize)
+                    //.attr('fill', 'rgb(100,10,10)')
+                    //.attr('onclick', function(d){ return "techtree._unshowTooltip('"+name+"'); techtree._dismissedTooltip='"+name+"'; return false;"; })
+                    //.text('X');
+            //}
+        //}
     },
-    
+
     _unshowTooltip: function(nodename){
         // removes the given node's tooltip
         d3.select('#'+nodename+'_tooltip_UI').remove();
@@ -395,6 +405,6 @@ techtree = {
         d3.select('#'+nodename+'_tooltip_title').remove();
         d3.select('#'+nodename+'_tooltip_img').remove();
         if (treeConfig.closeTooltip == 'x-button')
-            d3.select('#'+nodename+'_tooltip_closeBut').remove();                  
+            d3.select('#'+nodename+'_tooltip_closeBut').remove();
     }
 };

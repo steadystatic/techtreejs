@@ -1,9 +1,22 @@
+h1, h2, h3, p, div {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.clearfix {
+  clear:both;
+  *zoom:1;
+  height:0;
+  visibility: hidden;
+  display:block;
+}
+
 .node circle {
   fill: #fff;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
 .node {
+  cursor: pointer;
   font: 10px sans-serif;
 }
 
@@ -15,11 +28,90 @@
 }
 .link-available{
   fill: none;
-  stroke: blue;
+  stroke: #027988;
   stroke-width: 1.5px;
 }
 .link-complete{
   fill: none;
   stroke: green;
   stroke-width: 1.5px;
+}
+
+.popover-footer {
+  float:left;
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  background-color: #F7F7F7;
+  border-bottom: 1px solid #EBEBEB;
+  border-radius: 5px 5px 0 0;
+  width: 100%;
+}
+
+/* Learning map styles */
+
+.learning-map-overview {
+  margin-top: 30px;
+}
+
+.learning-map-instructions {
+  float: left;
+  margin-bottom: 30px;
+  width: 52%
+}
+
+.learning-map-concept {
+  color: #027988;
+}
+
+.learning-map-progress {
+  float: right;
+  width: 150px
+}
+
+.learning-map-progress h4 {
+  margin-top: 0;
+}
+
+.learning-map-progress .progress-bar {
+  text-indent: -10px;
+  padding: 0px 10%;
+}
+
+.learning-map-progress.empty-progress .progress-bar {
+  color: #333;
+position:relative;
+background:transparent;
+box-shadow: none;
+left: 10px;
+}
+
+.learning-map-progress.empty-progress .progress-bar .learning-map-progress-complete {
+  color: #333;
+}
+
+.learning-map-container {
+  float: left;
+  overflow: scroll;
+  height: 100%;
+  width: 100%;
+}
+
+.learning-map-container .node {
+  cursor: pointer;
+}
+
+.learning-map-topic-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.learning-map-controls {
+  padding-bottom: 20px
+}
+
+.learning-map-controls h4 {
+  margin-top: 20px;
 }
