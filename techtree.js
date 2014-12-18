@@ -29,6 +29,8 @@ techtree = {
           success: function( _data ) {
             var results = _data.results.bindings;
             $('.learning-map-controls').append($('h4').text(nodename));
+            $('.learning-map-topic-container').html('');
+            $('.learning-map-topic-container, .learning-map-controls').show();
             $( ".mark-complete" ).click(function() {
               $('svg').show();
               $('.learning-map-topic-container, .learning-map-controls').hide();
@@ -40,7 +42,7 @@ techtree = {
             });
             for ( var i in results ) {
               var src = results[i].o.value;
-              $('.learning-map-topic-container').append( '<img src="'+src+'"/>' );
+              $('.learning-map-topic-container').append( '<img src="'+src+'" height="100" width="100"/>' );
             }
           }
       });
