@@ -34,7 +34,7 @@ techtree = {
             $( ".mark-complete" ).click(function() {
               $('svg').show();
               $('.learning-map-topic-container, .learning-map-controls').hide();
-               techtree.completeResearch(nodename);
+               techtree.completeResearch(nodename.replace(/ /g,"_"));
             });
             $( ".cancel-reading" ).click(function() {
               $('svg').show();
